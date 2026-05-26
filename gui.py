@@ -6,11 +6,15 @@ import logging
 import os
 import threading
 import tkinter as tk
+from datetime import date, datetime
 from pathlib import Path
 from tkinter import filedialog
 
 import customtkinter as ctk
+import pytz
 from dotenv import load_dotenv
+
+WIB = pytz.timezone('Asia/Jakarta')
 
 load_dotenv()
 
@@ -36,7 +40,7 @@ class App(ctk.CTk):
         super().__init__()
 
         self.title('db_email_bot')
-        self.geometry('520x680')
+        self.geometry('520x760')
         self.resizable(False, False)
 
         config = self.load_config()
@@ -46,11 +50,15 @@ class App(ctk.CTk):
         self.end_hour_var = ctk.StringVar(value=str(config['end_hour']))
         self.skip_filter_var = ctk.BooleanVar(value=config['skip_time_filter'])
         self.include_read_var = ctk.BooleanVar(value=config.get('include_read', False))
+        self.date_mode_var = ctk.StringVar(value=config.get('date_mode', 'Today'))
+        today_str = datetime.now(WIB).strftime('%Y-%m-%d')
+        self.custom_date_var = ctk.StringVar(value=config.get('custom_date', today_str))
         self.output_var = ctk.StringVar(value=config['output_dir'])
 
         self._build_widgets()
         self._setup_log_handler()
         self._update_time_widgets()
+        self._update_date_widgets()
 
     # ------------------------------------------------------------------
     # Widget construction
@@ -128,7 +136,34 @@ class App(ctk.CTk):
             text='Include already-read emails',
             variable=self.include_read_var,
         )
-        self.include_read_switch.pack(anchor='w', padx=12, pady=(0, 10))
+        self.include_read_switch.pack(anchor='w', padx=12, pady=(0, 8))
+
+        # Date filter
+        ctk.CTkLabel(
+            settings_frame,
+            text='Date filter',
+            font=ctk.CTkFont(size=12),
+        ).pack(anchor='w', padx=12, pady=(0, 4))
+
+        date_frame = ctk.CTkFrame(settings_frame, fg_color='transparent')
+        date_frame.pack(fill='x', padx=12, pady=(0, 12))
+
+        self.date_seg = ctk.CTkSegmentedButton(
+            date_frame,
+            values=['Today', 'Custom'],
+            variable=self.date_mode_var,
+            command=self._update_date_widgets,
+            width=160,
+        )
+        self.date_seg.pack(side='left', padx=(0, 10))
+
+        self.custom_date_entry = ctk.CTkEntry(
+            date_frame,
+            textvariable=self.custom_date_var,
+            placeholder_text='YYYY-MM-DD',
+            width=120,
+        )
+        self.custom_date_entry.pack(side='left')
 
         # Output folder
         ctk.CTkLabel(
@@ -257,6 +292,9 @@ class App(ctk.CTk):
             'start_hour': 5,
             'end_hour': 6,
             'skip_time_filter': True,
+            'include_read': False,
+            'date_mode': 'Today',
+            'custom_date': datetime.now(WIB).strftime('%Y-%m-%d'),
             'output_dir': DEFAULT_OUTPUT,
         }
 
@@ -267,6 +305,8 @@ class App(ctk.CTk):
             'end_hour': int(self.end_hour_var.get()),
             'skip_time_filter': self.skip_filter_var.get(),
             'include_read': self.include_read_var.get(),
+            'date_mode': self.date_mode_var.get(),
+            'custom_date': self.custom_date_var.get(),
             'output_dir': self.output_var.get(),
         }
         with open(CONFIG_PATH, 'w') as f:
@@ -280,6 +320,10 @@ class App(ctk.CTk):
         state = 'disabled' if self.skip_filter_var.get() else 'normal'
         self.start_hour_menu.configure(state=state)
         self.end_hour_menu.configure(state=state)
+
+    def _update_date_widgets(self, *_):
+        state = 'normal' if self.date_mode_var.get() == 'Custom' else 'disabled'
+        self.custom_date_entry.configure(state=state)
 
     def on_browse_folder(self):
         current = self.output_var.get() or str(Path.home())
@@ -351,8 +395,26 @@ class App(ctk.CTk):
 
         skip = self.skip_filter_var.get()
         include_read = self.include_read_var.get()
+
+        filter_date: date | None = None
+        if self.date_mode_var.get() == 'Today':
+            filter_date = datetime.now(WIB).date()
+        else:
+            try:
+                filter_date = datetime.strptime(self.custom_date_var.get().strip(), '%Y-%m-%d').date()
+            except ValueError:
+                logger.error(f'Invalid date format: "{self.custom_date_var.get().strip()}" — use YYYY-MM-DD')
+                fetcher.close()
+                return 0, 1
+
+        logger.info(f'date filter: {filter_date.strftime("%d-%b-%Y")}')
+
         try:
-            messages = fetcher.fetch_matching(skip_time_filter=skip, include_read=include_read)
+            messages = fetcher.fetch_matching(
+                skip_time_filter=skip,
+                include_read=include_read,
+                filter_date=filter_date,
+            )
         except Exception as exc:
             logger.error(f'IMAP error: {exc}')
             fetcher.close()

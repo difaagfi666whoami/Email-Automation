@@ -6,7 +6,7 @@ import imaplib
 import logging
 import socket
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
 from email.utils import getaddresses, parseaddr, parsedate_to_datetime
 
 import pytz
@@ -159,10 +159,12 @@ class IMAPFetcher:
         self,
         skip_time_filter: bool = False,
         include_read: bool = False,
+        filter_date: date | None = None,
     ) -> list[EmailMessage]:
         self._conn.select(self.mailbox, readonly=False)
         seen_flag = '' if include_read else 'UNSEEN '
-        search_criteria = f'{seen_flag}SUBJECT "{SUBJECT_PREFIX}"'
+        date_flag = f' ON {filter_date.strftime("%d-%b-%Y")}' if filter_date else ''
+        search_criteria = f'{seen_flag}SUBJECT "{SUBJECT_PREFIX}"{date_flag}'
         typ, data = self._conn.uid('search', None, search_criteria)
         if typ != 'OK' or not data[0]:
             return []

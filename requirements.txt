@@ -1,0 +1,21 @@
+# requirements.txt — db_email_bot
+# Install with: pip install -r requirements.txt
+# After install, run: playwright install chromium
+
+# Email rendering (headless browser screenshot)
+playwright>=1.44.0
+
+# Telegram bot (async, v20+)
+python-telegram-bot>=20.7
+
+# Environment variables
+python-dotenv>=1.0.0
+
+# HTML templating for email view
+Jinja2>=3.1.0
+
+# Timezone handling
+pytz>=2024.1
+
+# HTML parsing (for cleaning email HTML bodies if needed)
+beautifulsoup4>=4.12.0

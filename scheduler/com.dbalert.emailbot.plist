@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+    "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.dbalert.emailbot</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <!-- Update this to the absolute path of your Python 3.11+ interpreter -->
+        <!-- Run: which python3 (inside your venv, or after activating it) -->
+        <string>/usr/local/bin/python3</string>
+        <string>/Users/difaagfi/Documents/Project/Email Automation/main.py</string>
+    </array>
+
+    <!-- Fires at 22:05 UTC = 05:05 AM Asia/Jakarta (WIB, UTC+7) -->
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>22</integer>
+        <key>Minute</key>
+        <integer>5</integer>
+    </dict>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/difaagfi/Documents/Project/Email Automation</string>
+
+    <key>StandardOutPath</key>
+    <string>/Users/difaagfi/Library/Logs/dbalert_emailbot.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/difaagfi/Library/Logs/dbalert_emailbot.log</string>
+
+    <key>RunAtLoad</key>
+    <false/>
+</dict>
+</plist>

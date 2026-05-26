@@ -173,7 +173,8 @@ async def main() -> None:
         fetcher.close()
 
     if args.test_render:
-        print(f'✅ Rendered {processed_count} email(s) to /tmp/email_captures/')
+        from email_renderer import OUTPUT_DIR
+        print(f'✅ Rendered {processed_count} email(s) to {OUTPUT_DIR}')
         return
 
     logger.info(f'done. {processed_count} emails processed, {sent_count} sent')

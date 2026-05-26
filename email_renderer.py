@@ -10,7 +10,7 @@ from imap_fetcher import EmailMessage
 logger = logging.getLogger('email_renderer')
 
 TEMPLATE_DIR = Path(__file__).parent / 'templates'
-OUTPUT_DIR = Path('/tmp/email_captures')
+OUTPUT_DIR = Path('/Users/difaagfi/Pictures/Email Automation')
 
 
 async def render(msg: EmailMessage, recipient_preview_count: int = 3) -> str:

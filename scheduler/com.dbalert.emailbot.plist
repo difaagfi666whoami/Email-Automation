@@ -8,9 +8,7 @@
 
     <key>ProgramArguments</key>
     <array>
-        <!-- Update this to the absolute path of your Python 3.11+ interpreter -->
-        <!-- Run: which python3 (inside your venv, or after activating it) -->
-        <string>/usr/local/bin/python3</string>
+        <string>/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3</string>
         <string>/Users/difaagfi/Documents/Project/Email Automation/main.py</string>
     </array>
 

@@ -1,0 +1,60 @@
+X-Account-Key: account1
+X-UIDL: UID157506-1687147684
+X-Mozilla-Status: 0001
+X-Mozilla-Status2: 00000000
+X-Mozilla-Keys:
+Return-Path: <it2@phillip.com.hk>
+Delivered-To: difa.agfi@cyberquote.co.id
+Received: from web10-cpn.neohosting.id
+	by web10-cpn.neohosting.id with LMTP
+	id E8HBOq9JFWpsRSsAC628ew
+	(envelope-from <it2@phillip.com.hk>)
+	for <difa.agfi@cyberquote.co.id>; Tue, 26 May 2026 14:20:15 +0700
+Return-path: <it2@phillip.com.hk>
+Envelope-to: difa.agfi@cyberquote.co.id
+Delivery-date: Tue, 26 May 2026 14:20:16 +0700
+Received: from [117.102.83.3] (port=45820 helo=sophos.dnb.co.id)
+	by web10-cpn.neohosting.id with esmtps  (TLS1.3) tls TLS_AES_256_GCM_SHA384
+	(Exim 4.99.2)
+	(envelope-from <it2@phillip.com.hk>)
+	id 1wRm5E-0000000Btiq-23R6
+	for difa.agfi@cyberquote.co.id;
+	Tue, 26 May 2026 14:20:15 +0700
+Received: from mxa166.phillip.com.hk ([210.177.63.199]:44757)
+	by sophos.dnb.co.id with esmtps  (TLS1.3) tls TLS_AES_256_GCM_SHA384
+	(Exim 4.96)
+	(envelope-from <it2@phillip.com.hk>)
+	id 1wRm56-000000007m1-0GON;
+	Tue, 26 May 2026 14:20:04 +0700
+Received: from mail-9.phillip.com.hk (mail.phillip.com.hk [198.1.12.8])
+	by mxa166.phillip.com.hk (Postfix) with ESMTP id 0D5143008586;
+	Tue, 26 May 2026 15:20:02 +0800 (HKT)
+Received: from mx1 (mx0.phillip.com.hk [198.1.12.12])
+	by mail-9.phillip.com.hk (Postfix) with ESMTPS id 4gPkfV59rLzrRj3;
+	Tue, 26 May 2026 15:20:02 +0800 (HKT)
+Received: from TDB-2857 (unknown [192.168.28.57])
+	by mx1 (Postfix) with ESMTP id 4gPkfW12LnzXdbH;
+	Tue, 26 May 2026 15:20:03 +0800 (HKT)
+Sensitivity: Normal
+Importance: Normal
+MIME-Version: 1.0
+From: "Database Mail: TDB-2857 (192.168.28.57)" <it2@phillip.com.hk>
+To: gmosupport@phillip.com.hk, b2bteam@phillip.com.hk,
+ foreignstock@phillip.com.hk, it2@phillip.com.hk, helper@phillip.com.hk,
+ option@phillip.com.hk, gmoalert2@phillip.com.hk,
+ venkateshpappu@phillip.com.hk
+Reply-To: jacksonleung@phillip.com.hk
+Date: 26 May 2026 15:20:02 +0800
+Subject: DB Email Alert - GMO Snapshot Trade Data (Prod)
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: base64
+Message-Id: <4gPkfW12LnzXdbH@mx1>
+
+UmFpc2VkIGJ5IDI4LjU3IGpvYiAiW0dsb2JhbE1PX0VPRF0gRW5kIG9mIERheSIgLSB0
+byBzbmFwc2hvdCBHTU8gb3JkZXIgYW5kIHRyYWRlIGRhdGEgZm9yIFNldHRsZW1lbnQg
+UHJvY2Vzcw0KdGFibGUgICAgICAgICAgICAgICAgICAgICAgICAsY291bnQgICAgICANC
+i0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLC0tLS0tLS0tLS0tDQp0Yl9hZG1p
+bl9keW5hbWljdGFnc19zbmFwc2hvdCwgICAgICAzODM4NQ0KdGJfYWRtaW5fb3JkZXJz
+X3NuYXBzaG90ICAgICAsICAgICAgIDgzNzUNCnRiX2FkbWluX3Bvc2l0aW9uc19zbmFw
+c2hvdCAgLCAgICAgIDIwNTEzDQp0Yl9hZG1pbl90cmFkZXNfc25hcHNob3QgICAgICwg
+ICAgICAgODM5OA0KDQooNCByb3dzIGFmZmVjdGVkKQ0K

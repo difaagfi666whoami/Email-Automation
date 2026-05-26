@@ -44,7 +44,7 @@ async def render(msg: EmailMessage, recipient_preview_count: int = 3) -> str:
     try:
         async with async_playwright() as p:
             browser = await p.chromium.launch(headless=True)
-            page = await browser.new_page(viewport={'width': 900, 'height': 1080})
+            page = await browser.new_page(viewport={'width': 1080, 'height': 500})
             await page.set_content(html_content, wait_until='networkidle')
             await page.screenshot(path=output_path, full_page=True)
             await browser.close()

@@ -57,6 +57,8 @@ def parse_args() -> argparse.Namespace:
     group.add_argument('--test-render', action='store_true', help='Render matched emails to PNG, no send')
     group.add_argument('--test-send', action='store_true', help='Render and send to Telegram, no mark-as-read')
     group.add_argument('--dry-run', action='store_true', help='Full pipeline, do not mark as read')
+    group.add_argument('--manual', action='store_true', help='Full pipeline, no time filter, marks as read')
+    parser.add_argument('--from-file', metavar='PATH', help='Load a single .eml file instead of fetching from IMAP')
     return parser.parse_args()
 
 
@@ -85,46 +87,59 @@ async def main() -> None:
 
     logger.info('starting db_email_bot')
 
-    from imap_fetcher import IMAPFetcher
+    from imap_fetcher import IMAPFetcher, parse_raw_email
     import email_renderer
     import telegram_sender
 
-    fetcher = IMAPFetcher(imap_host, imap_user, imap_pass, imap_port, imap_mailbox)
+    fetcher = None
 
-    try:
-        fetcher.connect()
-    except Exception:
-        sys.exit(1)
+    if args.from_file:
+        with open(args.from_file, 'rb') as fh:
+            raw = fh.read()
+        parsed = parse_raw_email(raw)
+        if parsed is None:
+            logger.error(f'could not parse email from {args.from_file}')
+            sys.exit(1)
+        messages = [parsed]
+        logger.info(f'1 email loaded from file: {args.from_file}')
+    else:
+        fetcher = IMAPFetcher(imap_host, imap_user, imap_pass, imap_port, imap_mailbox)
+        try:
+            fetcher.connect()
+        except Exception:
+            sys.exit(1)
 
-    if args.test_imap:
-        count = fetcher.get_inbox_count()
-        print(f'✅ Connected to {imap_host} as {imap_user} — {count} messages in INBOX')
-        fetcher.close()
-        return
+        if args.test_imap:
+            count = fetcher.get_inbox_count()
+            print(f'✅ Connected to {imap_host} as {imap_user} — {count} messages in INBOX')
+            fetcher.close()
+            return
 
-    try:
-        messages = fetcher.fetch_matching()
-    except Exception as exc:
-        logger.error(f'IMAP error: {exc}')
-        fetcher.close()
-        sys.exit(1)
+        is_test_mode = any([args.test_filter, args.test_render, args.test_send, args.dry_run, args.manual])
 
-    if not messages:
-        logger.info('no matching emails found')
-        fetcher.close()
-        return
+        try:
+            messages = fetcher.fetch_matching(skip_time_filter=is_test_mode)
+        except Exception as exc:
+            logger.error(f'IMAP error: {exc}')
+            fetcher.close()
+            sys.exit(1)
 
-    logger.info(f'{len(messages)} matching emails found')
+        if not messages:
+            logger.info('no matching emails found')
+            fetcher.close()
+            return
 
-    if args.test_filter:
-        for msg in messages:
-            print(f'  {msg.received_time.strftime("%Y-%m-%d %H:%M:%S")} WIB — {msg.subject}')
-        fetcher.close()
-        return
+        logger.info(f'{len(messages)} matching emails found')
+
+        if args.test_filter:
+            for msg in messages:
+                print(f'  {msg.received_time.strftime("%Y-%m-%d %H:%M:%S")} WIB — {msg.subject}')
+            fetcher.close()
+            return
 
     sent_count = 0
     processed_count = 0
-    mark_read = not any([args.test_send, args.dry_run])
+    mark_read = not any([args.test_send, args.dry_run, bool(args.from_file)]) or args.manual
 
     for msg in messages:
         processed_count += 1
@@ -151,10 +166,11 @@ async def main() -> None:
         success = results[0] if results else False
         if success:
             sent_count += 1
-            if mark_read:
+            if mark_read and fetcher:
                 fetcher.mark_as_read(msg.uid, msg.message_id)
 
-    fetcher.close()
+    if fetcher:
+        fetcher.close()
 
     if args.test_render:
         print(f'✅ Rendered {processed_count} email(s) to /tmp/email_captures/')

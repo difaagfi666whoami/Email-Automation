@@ -19,6 +19,51 @@ FETCH_WINDOW_START_HOUR = 5
 FETCH_WINDOW_END_HOUR = 6
 
 
+def _decode_header(value: str) -> str:
+    parts = email.header.decode_header(value)
+    decoded: list[str] = []
+    for part, charset in parts:
+        if isinstance(part, bytes):
+            decoded.append(part.decode(charset or 'utf-8', errors='replace'))
+        else:
+            decoded.append(part)
+    return ''.join(decoded).strip()
+
+
+def _extract_body(msg: email.message.Message) -> tuple[str, str | None]:
+    body_text = ''
+    body_html: str | None = None
+
+    if msg.is_multipart():
+        for part in msg.walk():
+            ct = part.get_content_type()
+            disposition = str(part.get('Content-Disposition', ''))
+            if 'attachment' in disposition:
+                continue
+            if ct == 'text/html' and body_html is None:
+                payload = part.get_payload(decode=True)
+                charset = part.get_content_charset() or 'utf-8'
+                body_html = payload.decode(charset, errors='replace')
+            elif ct == 'text/plain' and not body_text:
+                payload = part.get_payload(decode=True)
+                charset = part.get_content_charset() or 'utf-8'
+                body_text = payload.decode(charset, errors='replace')
+    else:
+        ct = msg.get_content_type()
+        payload = msg.get_payload(decode=True)
+        charset = msg.get_content_charset() or 'utf-8'
+        text = payload.decode(charset, errors='replace') if payload else ''
+        if ct == 'text/html':
+            body_html = text
+        else:
+            body_text = text
+
+    if not body_text and not body_html:
+        body_text = '(no body content)'
+
+    return body_text, body_html
+
+
 @dataclass
 class EmailMessage:
     uid: str
@@ -31,6 +76,47 @@ class EmailMessage:
     received_time: datetime
     body_text: str
     body_html: str | None
+
+
+def parse_raw_email(raw: bytes, uid: str = 'file') -> EmailMessage | None:
+    msg = email.message_from_bytes(raw)
+
+    subject = _decode_header(msg.get('Subject', ''))
+
+    date_header = msg.get('Date', '')
+    try:
+        received_dt = parsedate_to_datetime(date_header)
+        received_wib = received_dt.astimezone(WIB)
+    except Exception:
+        return None
+
+    from_raw = msg.get('From', '')
+    display_name, addr = parseaddr(from_raw)
+    sender_name = display_name if display_name else addr
+    sender_email = addr
+
+    to_raw = msg.get('To', '')
+    recipients = [a for _, a in getaddresses([to_raw]) if a]
+
+    reply_to_raw = msg.get('Reply-To', from_raw)
+    _, reply_to = parseaddr(reply_to_raw)
+    reply_to = reply_to or addr
+
+    message_id = msg.get('Message-ID', uid)
+    body_text, body_html = _extract_body(msg)
+
+    return EmailMessage(
+        uid=uid,
+        message_id=message_id,
+        subject=subject,
+        sender_name=sender_name,
+        sender_email=sender_email,
+        recipients=recipients,
+        reply_to=reply_to,
+        received_time=received_wib,
+        body_text=body_text,
+        body_html=body_html,
+    )
 
 
 class IMAPFetcher:
@@ -68,9 +154,9 @@ class IMAPFetcher:
             return int(counts[0])
         return 0
 
-    def fetch_matching(self) -> list[EmailMessage]:
+    def fetch_matching(self, skip_time_filter: bool = False) -> list[EmailMessage]:
         self._conn.select(self.mailbox, readonly=False)
-        typ, data = self._conn.uid('search', None, 'UNSEEN')
+        typ, data = self._conn.uid('search', None, 'ALL')
         if typ != 'OK' or not data[0]:
             return []
 
@@ -85,7 +171,7 @@ class IMAPFetcher:
             raw = msg_data[0][1]
             msg = email.message_from_bytes(raw)
 
-            subject = self._decode_header(msg.get('Subject', ''))
+            subject = _decode_header(msg.get('Subject', ''))
             if not subject.startswith(SUBJECT_PREFIX):
                 continue
 
@@ -96,8 +182,9 @@ class IMAPFetcher:
             except Exception:
                 continue
 
-            if not (FETCH_WINDOW_START_HOUR <= received_wib.hour < FETCH_WINDOW_END_HOUR):
-                continue
+            if not skip_time_filter:
+                if not (FETCH_WINDOW_START_HOUR <= received_wib.hour < FETCH_WINDOW_END_HOUR):
+                    continue
 
             from_raw = msg.get('From', '')
             display_name, addr = parseaddr(from_raw)
@@ -112,8 +199,7 @@ class IMAPFetcher:
             reply_to = reply_to or addr
 
             message_id = msg.get('Message-ID', uid.decode())
-
-            body_text, body_html = self._extract_body(msg)
+            body_text, body_html = _extract_body(msg)
 
             messages.append(EmailMessage(
                 uid=uid.decode(),
@@ -142,46 +228,3 @@ class IMAPFetcher:
                 self._conn.logout()
             except Exception:
                 pass
-
-    def _decode_header(self, value: str) -> str:
-        parts = email.header.decode_header(value)
-        decoded: list[str] = []
-        for part, charset in parts:
-            if isinstance(part, bytes):
-                decoded.append(part.decode(charset or 'utf-8', errors='replace'))
-            else:
-                decoded.append(part)
-        return ''.join(decoded).strip()
-
-    def _extract_body(self, msg: email.message.Message) -> tuple[str, str | None]:
-        body_text = ''
-        body_html: str | None = None
-
-        if msg.is_multipart():
-            for part in msg.walk():
-                ct = part.get_content_type()
-                disposition = str(part.get('Content-Disposition', ''))
-                if 'attachment' in disposition:
-                    continue
-                if ct == 'text/html' and body_html is None:
-                    payload = part.get_payload(decode=True)
-                    charset = part.get_content_charset() or 'utf-8'
-                    body_html = payload.decode(charset, errors='replace')
-                elif ct == 'text/plain' and not body_text:
-                    payload = part.get_payload(decode=True)
-                    charset = part.get_content_charset() or 'utf-8'
-                    body_text = payload.decode(charset, errors='replace')
-        else:
-            ct = msg.get_content_type()
-            payload = msg.get_payload(decode=True)
-            charset = msg.get_content_charset() or 'utf-8'
-            text = payload.decode(charset, errors='replace') if payload else ''
-            if ct == 'text/html':
-                body_html = text
-            else:
-                body_text = text
-
-        if not body_text and not body_html:
-            body_text = '(no body content)'
-
-        return body_text, body_html

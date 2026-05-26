@@ -8,7 +8,7 @@
 
     <key>ProgramArguments</key>
     <array>
-        <string>/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3</string>
+        <string>/Users/difaagfi/Documents/Project/Email Automation/.venv/bin/python3</string>
         <string>/Users/difaagfi/Documents/Project/Email Automation/main.py</string>
     </array>
 

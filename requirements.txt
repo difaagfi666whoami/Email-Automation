@@ -19,3 +19,6 @@ pytz>=2024.1
 
 # HTML parsing (for cleaning email HTML bodies if needed)
 beautifulsoup4>=4.12.0
+
+# Desktop GUI wrapper
+customtkinter>=5.2.0

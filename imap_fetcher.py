@@ -137,15 +137,16 @@ class IMAPFetcher:
 
     def connect(self) -> None:
         try:
-            socket.setdefaulttimeout(10)
+            socket.setdefaulttimeout(60)
             self._conn = imaplib.IMAP4_SSL(self.host, self.port)
+            self._conn.socket().settimeout(60)
             self._conn.login(self.user, self._password)
             logger.info(f'connected to {self.host} as {self.user}')
         except imaplib.IMAP4.error as exc:
             logger.error(f'IMAP error: {exc}')
             raise
         except socket.timeout:
-            logger.error(f'IMAP error: connection to {self.host} timed out after 10s')
+            logger.error(f'IMAP error: connection to {self.host} timed out after 60s')
             raise
 
     def get_inbox_count(self) -> int:
@@ -154,9 +155,15 @@ class IMAPFetcher:
             return int(counts[0])
         return 0
 
-    def fetch_matching(self, skip_time_filter: bool = False) -> list[EmailMessage]:
+    def fetch_matching(
+        self,
+        skip_time_filter: bool = False,
+        include_read: bool = False,
+    ) -> list[EmailMessage]:
         self._conn.select(self.mailbox, readonly=False)
-        typ, data = self._conn.uid('search', None, 'ALL')
+        seen_flag = '' if include_read else 'UNSEEN '
+        search_criteria = f'{seen_flag}SUBJECT "{SUBJECT_PREFIX}"'
+        typ, data = self._conn.uid('search', None, search_criteria)
         if typ != 'OK' or not data[0]:
             return []
 
